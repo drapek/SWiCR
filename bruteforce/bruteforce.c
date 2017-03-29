@@ -22,15 +22,10 @@ int check_password(const char * program_path, const char * username, char * pass
 int check_if_file_exist(const char * program_path);
 char * init_char_set();
 void print_array(char * array);
-int start_brutforce(const char * program_path, const char * username, int password_length, char * brutforce_char_set);
-int generate_next_password_pattern(char ** password_pattern, char * brutforce_char_set, int password_length);
-void init_password_pattern(char ** password_pattern, int password_length);
-
-struct password_pattern {
-  char actual_char;
-  int actual_char_index;
-  int char_max_index;
-}
+int start_brutforce(const char * program_path, const char * username, int password_length, char * brutforce_char_set, int charset_length);
+void init_actual_pswd_pattern(int * actual_pswd_pattern, int charset_length);
+void transform_pswd_to_string(int * actual_pswd_pattern, int password_length, char * charset, char * store_pswd_here);
+int generate_next_password_pattern(int * actual_password_indexes, int password_length, int charset_length);
 
 int main(int argc, char const *argv[]) {
   if( argc < 4 ) {
@@ -51,13 +46,14 @@ int main(int argc, char const *argv[]) {
     return EXIT_FAILURE;
   }
 
-
-  char * brutforce_char_set = init_char_set();
+  int charset_length = 0;
+  char * brutforce_char_set = init_char_set(&charset_length);
   #if (DEBUG)
+    printf("Charset length: %d\n", charset_length);
     print_array(brutforce_char_set);
   #endif
 
-  start_brutforce(argv[1], argv[2], max_pswd_length, brutforce_char_set);
+  start_brutforce(argv[1], argv[2], max_pswd_length, brutforce_char_set, charset_length);
 
   /*test - delete after it*/
   printf("Result: %s\n", (check_password(argv[1], argv[2], "xcw") == CORRECT_PASSWORD) ? "passed" : "not passed");
@@ -66,57 +62,90 @@ int main(int argc, char const *argv[]) {
 }
 
 
-int start_brutforce(const char * program_path, const char * username, int password_length, char * brutforce_char_set) {
-  char ** actual_pswd_pattern = (char **) malloc((password_length + 1) * sizeof(char *));
-  actual_pswd_pattern[password_length] = '\0';
+int start_brutforce(const char * program_path, const char * username, int password_length, char * brutforce_char_set, int charset_length) {
+  int * actual_pswd_pattern = (int *) malloc((password_length) * sizeof(int)); /*stores password as indexes of brutforce_char_set array */
+  init_actual_pswd_pattern(actual_pswd_pattern, password_length);
+  char * password_to_check = (char *) malloc((password_length + 1) * sizeof(char)); /* stores password as string */
 
-  actual_pswd_pattern[0] = &brutforce_char_set[0]; /* make 'a' as password pattern */
+  //TODO analize code below - beacuse for sure it going to trash :D
+  // int i;
+  // for(i = 0; i < 100; i++) {
+  //   #if (DEBUG)
+  //     printf("Actual proceed password: %s\n", actual_pswd_pattern[0]);
+  //
+  //     int i = 0;
+  //     while(actual_pswd_pattern[i] != NULL){
+  //       printf("\f%c (addr: %d)\n", *actual_pswd_pattern[i], actual_pswd_pattern[i]);
+  //       i ++;
+  //     }
+  //   #endif
+  //   generate_next_password_pattern(actual_pswd_pattern, brutforce_char_set, password_length);
 
-  int i;
-  for(i = 0; i < 100; i++) {
-    #if (DEBUG)
-      printf("Actual proceed password: %s\n", actual_pswd_pattern[0]);
-
-      int i = 0;
-      while(actual_pswd_pattern[i] != NULL){
-        printf("\f%c (addr: %d)\n", *actual_pswd_pattern[i], actual_pswd_pattern[i]);
-        i ++;
-      }
+  //}
+  int all_patterns_checked = 0;
+  int i = 0;
+  while( !all_patterns_checked && i < 100) {
+    transform_pswd_to_string(actual_pswd_pattern, password_length, brutforce_char_set, password_to_check);
+    #if( DEBUG )
+      printf("\tActual checked password: %s\n", password_to_check);
     #endif
-    generate_next_password_pattern(actual_pswd_pattern, brutforce_char_set, password_length);
+    i++;
+    all_patterns_checked = generate_next_password_pattern(actual_pswd_pattern, password_length, charset_length);
+}
 
-  }
 
 }
 
 /* generate next password pattern. Returns 1 when there is no next pattern, 0 if OK*/
-int generate_next_password_pattern(char ** password_pattern, char * brutforce_char_set, int password_length) {
-   int i = 0;
-   while( password_pattern[i] != NULL) {
+int generate_next_password_pattern(int * actual_password_indexes, int password_length, int charset_length) {
+   int i = 1;
+   while( actual_password_indexes[i] != -1 && i < password_length) {
       i++;
     }
 
     i--; /* this is index of the last char in password pattern */
 
-    password_pattern[i] = password_pattern[i] + 1;
+    actual_password_indexes[i] = actual_password_indexes[i] + 1;
 
-    if(password_pattern[i] == '\0') {
-      if(i == password_length)
-        return 1; /* we can't generete next pattern because our password has already max lenght */
-
-      int j = i + 1;
-      for(; j >= 0; j--) {
-        password_pattern[j] = &brutforce_char_set[0];
-      }
-    }
+    //TODO repair this part of code!
+    // /* check if it is the last char in charset */
+    // if(actual_password_indexes[i] == charset_length - 1) {
+    //   if(i == (password_length - 1))
+    //     return 1; /* we can't generete next pattern because our password has already max lenght */
+    //
+    //   int k = i;
+    //   while( actual_password_indexes[k] == (charset_length - 1)) {
+    //     if (k != 0 ) k--;
+    //     /*if all chars are the last char of charset than expand password and initialized it. */
+    //     if(k == 0) {
+    //       int j = i + 1;
+    //       for(; j >= 0; j--) {
+    //         actual_password_indexes[j] = 0; /*assign index of first char in char set array */
+    //       }
+    //     }
+    //    }
+    // actual_password_indexes[k] = actual_password_indexes[k] + 1;
+    // }
 
     return 0;
 }
 
-void init_password_pattern(char ** password_pattern, int password_length) {
+void init_actual_pswd_pattern(int * actual_pswd_pattern, int charset_length){
   int i;
-  for(i = 0; i <= password_length; i++)
-    password_pattern[i] = NULL;
+  for(i = 0; i < charset_length; i++){
+    actual_pswd_pattern[i] = -1;
+  }
+}
+
+
+void transform_pswd_to_string(int * actual_pswd_pattern, int password_length, char * charset, char * store_pswd_here) {
+  int i = 0;
+  while( actual_pswd_pattern[i] != -1 && i < password_length ) {
+    store_pswd_here[i] = charset[actual_pswd_pattern[i]];
+    i++;
+  }
+
+  store_pswd_here[i] = '\0';
 }
 
 /* Check if username and password for given program is correct */
@@ -158,7 +187,7 @@ int check_if_file_exist(const char * program_path) {
   }
 }
 
-char * init_char_set() {
+char * init_char_set(int * charset_length) {
   char * result_char_set = (char *) malloc(BUFF_SIZE * sizeof(char));
   int array_elem_nmb = 0;
 
@@ -196,7 +225,7 @@ char * init_char_set() {
     array_elem_nmb++;
   }
 
-
+  *charset_length = array_elem_nmb;
   result_char_set[array_elem_nmb] = '\0'; /*the last element of array shoud be null*/
 
   return result_char_set;
