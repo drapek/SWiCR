@@ -7,7 +7,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdlib.h>
 #include <unistd.h>
 
 #define WRONG_PASSWORD 0
@@ -53,12 +52,9 @@ int main(int argc, char const *argv[]) {
     print_array(brutforce_char_set);
   #endif
 
-  start_brutforce(argv[1], argv[2], max_pswd_length, brutforce_char_set, charset_length);
+  int result = start_brutforce(argv[1], argv[2], max_pswd_length, brutforce_char_set, charset_length);
 
-  /*test - delete after it*/
-  printf("Result: %s\n", (check_password(argv[1], argv[2], "xcw") == CORRECT_PASSWORD) ? "passed" : "not passed");
-
-  return 0;
+  return result;
 }
 
 
@@ -67,33 +63,23 @@ int start_brutforce(const char * program_path, const char * username, int passwo
   init_actual_pswd_pattern(actual_pswd_pattern, password_length);
   char * password_to_check = (char *) malloc((password_length + 1) * sizeof(char)); /* stores password as string */
 
-  //TODO analize code below - beacuse for sure it going to trash :D
-  // int i;
-  // for(i = 0; i < 100; i++) {
-  //   #if (DEBUG)
-  //     printf("Actual proceed password: %s\n", actual_pswd_pattern[0]);
-  //
-  //     int i = 0;
-  //     while(actual_pswd_pattern[i] != NULL){
-  //       printf("\f%c (addr: %d)\n", *actual_pswd_pattern[i], actual_pswd_pattern[i]);
-  //       i ++;
-  //     }
-  //   #endif
-  //   generate_next_password_pattern(actual_pswd_pattern, brutforce_char_set, password_length);
-
-  //}
-  int all_patterns_checked = 0;
+  int is_all_patterns_checked = 0;
   int i = 0;
-  while( !all_patterns_checked && i < 100) {
+  while( !is_all_patterns_checked) {
     transform_pswd_to_string(actual_pswd_pattern, password_length, brutforce_char_set, password_to_check);
+    if( check_password(program_path, username, password_to_check) == CORRECT_PASSWORD ) {
+      printf("Found password: %s\n", password_to_check);
+      return 0;
+    }
     #if( DEBUG )
       printf("\tActual checked password: %s\n", password_to_check);
     #endif
     i++;
-    all_patterns_checked = generate_next_password_pattern(actual_pswd_pattern, password_length, charset_length);
-}
+    is_all_patterns_checked = generate_next_password_pattern(actual_pswd_pattern, password_length, charset_length);
+  }
 
-
+  printf("Sorry, password not found. May try with longer password.\n");
+  return 1;
 }
 
 /* generate next password pattern. Returns 1 when there is no next pattern, 0 if OK*/
@@ -105,27 +91,35 @@ int generate_next_password_pattern(int * actual_password_indexes, int password_l
 
     i--; /* this is index of the last char in password pattern */
 
-    actual_password_indexes[i] = actual_password_indexes[i] + 1;
+    if(actual_password_indexes[i] == charset_length) {
+      /* if end char or chars have maximum value than find previous element who isn't*/
+      int k = i;
+      while( actual_password_indexes[k] == charset_length) {
+        k--;
+        /*if all elemntes have maximum value than exapnd password */
+        if( k == -1)  {
+            /* when password have maxium length with all maxiumum values than there is no more options */
+            if(i == (password_length - 1))
+                return 1; /* we can't generete next pattern because our password has already max lenght */
 
-    //TODO repair this part of code!
-    // /* check if it is the last char in charset */
-    // if(actual_password_indexes[i] == charset_length - 1) {
-    //   if(i == (password_length - 1))
-    //     return 1; /* we can't generete next pattern because our password has already max lenght */
-    //
-    //   int k = i;
-    //   while( actual_password_indexes[k] == (charset_length - 1)) {
-    //     if (k != 0 ) k--;
-    //     /*if all chars are the last char of charset than expand password and initialized it. */
-    //     if(k == 0) {
-    //       int j = i + 1;
-    //       for(; j >= 0; j--) {
-    //         actual_password_indexes[j] = 0; /*assign index of first char in char set array */
-    //       }
-    //     }
-    //    }
-    // actual_password_indexes[k] = actual_password_indexes[k] + 1;
-    // }
+            int j = i + 1;
+            for(; j >= 0; j--) {
+              actual_password_indexes[j] = 0; /*assign index of first char in char set array */
+           }
+        } else {
+          /* add value of first non maximum elements, and from this char to end assign first char value*/
+          actual_password_indexes[k] =+ actual_password_indexes[k] + 1;
+          int j = k + 1;
+          while(actual_password_indexes[j] != -1 && j < password_length) {
+            actual_password_indexes[j] = 0;
+            j++;
+          }
+        }
+      } /*while closing*/
+    } else {
+      actual_password_indexes[i] = actual_password_indexes[i] + 1;
+    }
+
 
     return 0;
 }
