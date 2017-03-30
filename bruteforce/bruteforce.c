@@ -74,7 +74,6 @@ int start_brutforce(const char * program_path, const char * username, int passwo
   password_to_check = (char *) malloc((password_length + 1) * sizeof(char)); /* stores password as string */
 
   is_all_patterns_checked = 0;
-  i = 0;
   while( !is_all_patterns_checked) {
     transform_pswd_to_string(actual_pswd_pattern, password_length, brutforce_char_set, password_to_check);
     if( check_password(program_path, username, password_to_check) == CORRECT_PASSWORD ) {
@@ -84,7 +83,6 @@ int start_brutforce(const char * program_path, const char * username, int passwo
     #if( DEBUG )
       printf("\tActual checked password: %s\n", password_to_check);
     #endif
-    i++;
     is_all_patterns_checked = generate_next_password_pattern(actual_pswd_pattern, password_length, charset_length);
   }
 
@@ -97,7 +95,6 @@ int generate_next_password_pattern(int * actual_password_indexes, int password_l
    int i;
    int j;
    int k;
-
 
    i = 1; /*TODO here could be problems */
    while( actual_password_indexes[i] != -1 && i < password_length) {
@@ -171,14 +168,14 @@ int check_password(const char * program_path, const char * username, char * pass
 /* Creates command with parameters to execute it in system() function */
 char * create_execution_command(const char * program_path, const char * username, char * password ) {
   char * command_to_execute = malloc(BUFF_SIZE * sizeof(char));
-  char * space = " ";
+  char * spacebar = " ";
   char * program_runner = "./";
 
   strcat(command_to_execute, program_runner);
   strcat(command_to_execute, program_path);
-  strcat(command_to_execute, space);
+  strcat(command_to_execute, spacebar);
   strcat(command_to_execute, username);
-  strcat(command_to_execute, space);
+  strcat(command_to_execute, spacebar);
   strcat(command_to_execute, password);
   strcat(command_to_execute, " 1> /dev/null"); /*ignores stdout of hacking program*/
 

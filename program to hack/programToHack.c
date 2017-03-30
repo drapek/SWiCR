@@ -10,20 +10,22 @@
 #include <stdlib.h>
 
 #define USERNAME "drapek"
-#define PASSWORD "xcw"
+#define PASSWORD "a0"
 #define BUFF_SIZE 1024
 
 int authorization( char * input_usrnm, char * input_psswd) ;
 
 int main( int argc, char ** argv ) {
+	char * input_username;
+	char * input_password;
 
-	if( argc < 2 ) {
+	if( argc < 3 ) {
 		printf("Error, you need to 2 parametres: username and password!\n");
 		return EXIT_FAILURE;
 	}
-  
-	char * input_username = argv[1];
-	char * input_password = argv[2];
+
+	input_username = argv[1];
+	input_password = argv[2];
 
 	if( !authorization(input_username, input_password) ){
 		printf("You gained access!\n");
