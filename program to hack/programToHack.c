@@ -10,7 +10,7 @@
 #include <stdlib.h>
 
 #define USERNAME "drapek"
-#define PASSWORD "a0"
+#define PASSWORD "g8"
 #define BUFF_SIZE 1024
 
 int authorization( char * input_usrnm, char * input_psswd) ;

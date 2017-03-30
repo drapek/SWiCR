@@ -38,7 +38,6 @@ int main(int argc, char const *argv[]) {
   }
 
   max_pswd_length = atoi(argv[3]);
-  printf("%d\n", max_pswd_length);
 
   if( (max_pswd_length < 1) || (max_pswd_length > 1024)) {
     printf("[ERROR] Maximum password length must be greater than 0 and smaller than 1025\n");
@@ -57,6 +56,7 @@ int main(int argc, char const *argv[]) {
     print_array(brutforce_char_set);
   #endif
 
+  printf("Processing in progress. Be patient, this operation can take long time.\n");
   result = start_brutforce(argv[1], argv[2], max_pswd_length, brutforce_char_set, charset_length);
 
   return result;
@@ -77,7 +77,7 @@ int start_brutforce(const char * program_path, const char * username, int passwo
   while( !is_all_patterns_checked) {
     transform_pswd_to_string(actual_pswd_pattern, password_length, brutforce_char_set, password_to_check);
     if( check_password(program_path, username, password_to_check) == CORRECT_PASSWORD ) {
-      printf("Found password: %s\n", password_to_check);
+      printf("[SUCCESS] Password found: %s\n", password_to_check);
       return 0;
     }
     #if( DEBUG )
@@ -86,7 +86,7 @@ int start_brutforce(const char * program_path, const char * username, int passwo
     is_all_patterns_checked = generate_next_password_pattern(actual_pswd_pattern, password_length, charset_length);
   }
 
-  printf("Sorry, password not found. May try with longer password.\n");
+  printf("[FAIL] Sorry, password not found. May try with longer password or check username.\n");
   return 1;
 }
 
@@ -103,10 +103,10 @@ int generate_next_password_pattern(int * actual_password_indexes, int password_l
 
     i--; /* this is index of the last char in password pattern */
 
-    if(actual_password_indexes[i] == charset_length) {
+    if(actual_password_indexes[i] == (charset_length - 1)) {
       /* if end char or chars have maximum value than find previous element who isn't*/
       k = i;
-      while( actual_password_indexes[k] == charset_length) {
+      while( actual_password_indexes[k] == (charset_length - 1)) {
         k--;
         /*if all elemntes have maximum value than exapnd password */
         if( k == -1)  {
