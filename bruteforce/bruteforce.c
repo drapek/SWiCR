@@ -27,12 +27,17 @@ void transform_pswd_to_string(int * actual_pswd_pattern, int password_length, ch
 int generate_next_password_pattern(int * actual_password_indexes, int password_length, int charset_length);
 
 int main(int argc, char const *argv[]) {
+  int max_pswd_length;
+  int charset_length;
+  char * brutforce_char_set;
+  int result;
+
   if( argc < 4 ) {
     printf("[ERROR] You need 3 parametres: [program_path] [user_login] [password_max_lengts]\n");
     return EXIT_FAILURE;
   }
 
-  int max_pswd_length = atoi(argv[3]);
+  max_pswd_length = atoi(argv[3]);
   printf("%d\n", max_pswd_length);
 
   if( (max_pswd_length < 1) || (max_pswd_length > 1024)) {
@@ -45,26 +50,31 @@ int main(int argc, char const *argv[]) {
     return EXIT_FAILURE;
   }
 
-  int charset_length = 0;
-  char * brutforce_char_set = init_char_set(&charset_length);
+  charset_length = 0;
+  brutforce_char_set = init_char_set(&charset_length);
   #if (DEBUG)
     printf("Charset length: %d\n", charset_length);
     print_array(brutforce_char_set);
   #endif
 
-  int result = start_brutforce(argv[1], argv[2], max_pswd_length, brutforce_char_set, charset_length);
+  result = start_brutforce(argv[1], argv[2], max_pswd_length, brutforce_char_set, charset_length);
 
   return result;
 }
 
 
 int start_brutforce(const char * program_path, const char * username, int password_length, char * brutforce_char_set, int charset_length) {
-  int * actual_pswd_pattern = (int *) malloc((password_length) * sizeof(int)); /*stores password as indexes of brutforce_char_set array */
-  init_actual_pswd_pattern(actual_pswd_pattern, password_length);
-  char * password_to_check = (char *) malloc((password_length + 1) * sizeof(char)); /* stores password as string */
+  int * actual_pswd_pattern;
+  char * password_to_check;
+  int is_all_patterns_checked;
+  int i;
 
-  int is_all_patterns_checked = 0;
-  int i = 0;
+  actual_pswd_pattern = (int *) malloc((password_length) * sizeof(int)); /*stores password as indexes of brutforce_char_set array */
+  init_actual_pswd_pattern(actual_pswd_pattern, password_length);
+  password_to_check = (char *) malloc((password_length + 1) * sizeof(char)); /* stores password as string */
+
+  is_all_patterns_checked = 0;
+  i = 0;
   while( !is_all_patterns_checked) {
     transform_pswd_to_string(actual_pswd_pattern, password_length, brutforce_char_set, password_to_check);
     if( check_password(program_path, username, password_to_check) == CORRECT_PASSWORD ) {
@@ -84,7 +94,12 @@ int start_brutforce(const char * program_path, const char * username, int passwo
 
 /* generate next password pattern. Returns 1 when there is no next pattern, 0 if OK*/
 int generate_next_password_pattern(int * actual_password_indexes, int password_length, int charset_length) {
-   int i = 1;
+   int i;
+   int j;
+   int k;
+
+
+   i = 1; /*TODO here could be problems */
    while( actual_password_indexes[i] != -1 && i < password_length) {
       i++;
     }
@@ -93,7 +108,7 @@ int generate_next_password_pattern(int * actual_password_indexes, int password_l
 
     if(actual_password_indexes[i] == charset_length) {
       /* if end char or chars have maximum value than find previous element who isn't*/
-      int k = i;
+      k = i;
       while( actual_password_indexes[k] == charset_length) {
         k--;
         /*if all elemntes have maximum value than exapnd password */
@@ -102,14 +117,14 @@ int generate_next_password_pattern(int * actual_password_indexes, int password_l
             if(i == (password_length - 1))
                 return 1; /* we can't generete next pattern because our password has already max lenght */
 
-            int j = i + 1;
+            j = i + 1;
             for(; j >= 0; j--) {
               actual_password_indexes[j] = 0; /*assign index of first char in char set array */
            }
         } else {
           /* add value of first non maximum elements, and from this char to end assign first char value*/
           actual_password_indexes[k] =+ actual_password_indexes[k] + 1;
-          int j = k + 1;
+          j = k + 1;
           while(actual_password_indexes[j] != -1 && j < password_length) {
             actual_password_indexes[j] = 0;
             j++;
@@ -119,7 +134,6 @@ int generate_next_password_pattern(int * actual_password_indexes, int password_l
     } else {
       actual_password_indexes[i] = actual_password_indexes[i] + 1;
     }
-
 
     return 0;
 }
@@ -182,14 +196,23 @@ int check_if_file_exist(const char * program_path) {
 }
 
 char * init_char_set(int * charset_length) {
-  char * result_char_set = (char *) malloc(BUFF_SIZE * sizeof(char));
-  int array_elem_nmb = 0;
+  char * result_char_set;
+  int array_elem_nmb;
+  int char_a_code;
+  int char_z_code;
+  int range;
+  int i;
+  int start_index;
+
+
+  result_char_set = (char *) malloc(BUFF_SIZE * sizeof(char));
+  array_elem_nmb = 0;
 
   /*put small letters into array*/
-  int char_a_code = 97;
-  int char_z_code = 122;
-  int range = char_z_code - char_a_code;
-  int i;
+  char_a_code = 97;
+  char_z_code = 122;
+  range = char_z_code - char_a_code;
+  i;
   for (i = 0; i <= range; i++){
     result_char_set[i] = (char)(char_a_code + i);
     array_elem_nmb++;
@@ -200,7 +223,7 @@ char * init_char_set(int * charset_length) {
   char_z_code = 90;
   range = char_z_code - char_a_code;
 
-  int start_index = array_elem_nmb;
+  start_index = array_elem_nmb;
 
   for (i = 0; i <= range; i++){
     result_char_set[i + start_index] = (char)(char_a_code + i);
@@ -226,8 +249,9 @@ char * init_char_set(int * charset_length) {
 }
 
 void print_array(char * array) {
+  int i;
   printf("Charset for brutforce attack:\n");
-  int i = 0;
+  i = 0;
   while(array[i] != '\0') {
     printf("[%d] %c (addr: %d)\n", i, array[i], &array[i]);
     i++;
