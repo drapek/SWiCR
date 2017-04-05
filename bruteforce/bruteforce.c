@@ -168,6 +168,7 @@ int check_password(const char * program_path, const char * username, char * pass
 /* Creates command with parameters to execute it in system() function */
 char * create_execution_command(const char * program_path, const char * username, char * password ) {
   char * command_to_execute = malloc(BUFF_SIZE * sizeof(char));
+  memset(command_to_execute, '\0', BUFF_SIZE * sizeof(char));
   char * spacebar = " ";
   char * program_runner = "./";
 
